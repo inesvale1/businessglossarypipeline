@@ -1,0 +1,309 @@
+{
+  "artifact_metadata": {
+    "artifact_type": "organizational_context",
+    "artifact_version": "1.0",
+    "organization": "Secretaria da Fazenda do Estado do Ceará",
+    "organization_acronym": "Sefaz-CE",
+    "source_document": "Cadeia-de-Valor-SefazCE.pdf",
+    "source_pages": [
+      1,
+      2,
+      3
+    ],
+    "language": "pt-BR",
+    "usage_note": "Contexto organizacional para apoiar a geração de contextos locais canônicos por sistema e esquema. A estrutura registra apenas elementos explicitamente presentes na cadeia de valor. Os itens abaixo dos macroprocessos são tratados como atividades/capacidades oficiais da cadeia de valor, sem inferência de processos ou subprocessos adicionais."
+  },
+  "strategic_context": {
+    "mission": "Melhorar a vida das pessoas arrecadando com justiça e gerindo com excelência os recursos financeiros da sociedade.",
+    "vision": "Construir um ambiente fiscal sólido, transparente e justo, com a participação da sociedade, para o desenvolvimento equilibrado do Estado.",
+    "strategic_outcomes": [
+      {
+        "id": "OUT-RECEITA",
+        "name": "Garantir a receita tributária e promover a melhoria do ambiente de negócio"
+      },
+      {
+        "id": "OUT-SUSTENTABILIDADE",
+        "name": "Assegurar a sustentabilidade fiscal do Estado"
+      },
+      {
+        "id": "OUT-SUPORTE",
+        "name": "Dar suporte à operação, sustentando os processos de negócio"
+      }
+    ],
+    "external_stakeholder": "Sociedade"
+  },
+  "value_chain_groups": [
+    {
+      "id": "GRP-RECEITA",
+      "name": "Garantia da receita tributária e melhoria do ambiente de negócio",
+      "category": "finalistico",
+      "associated_outcome_id": "OUT-RECEITA",
+      "macroprocess_ids": [
+        "MP-TRIBUTACAO",
+        "MP-ARRECADACAO",
+        "MP-ATENDIMENTO",
+        "MP-MONITORAMENTO-FISCALIZACAO",
+        "MP-CONTENCIOSO"
+      ]
+    },
+    {
+      "id": "GRP-SUSTENTABILIDADE",
+      "name": "Sustentabilidade fiscal do Estado",
+      "category": "finalistico",
+      "associated_outcome_id": "OUT-SUSTENTABILIDADE",
+      "macroprocess_ids": [
+        "MP-GESTAO-FISCAL",
+        "MP-GESTAO-ATIVOS",
+        "MP-GESTAO-PASSIVOS",
+        "MP-GESTAO-FINANCEIRA",
+        "MP-CONTABILIDADE-INFORMACOES"
+      ]
+    },
+    {
+      "id": "GRP-SUPORTE",
+      "name": "Suporte à operação",
+      "category": "suporte",
+      "associated_outcome_id": "OUT-SUPORTE",
+      "macroprocess_ids": [
+        "MP-PLANEJAMENTO-DESENVOLVIMENTO",
+        "MP-RELACIONAMENTO-SOCIEDADE",
+        "MP-GESTAO-CAPITAL-HUMANO",
+        "MP-GESTAO-ORCAMENTARIA-FINANCEIRA",
+        "MP-GESTAO-TIC",
+        "MP-GESTAO-INFRAESTRUTURA-LOGISTICA",
+        "MP-INTEGRIDADE-ORGANIZACIONAL",
+        "MP-ASSESSORIA-JURIDICA"
+      ]
+    }
+  ],
+  "official_macroprocesses": [
+    {
+      "id": "MP-TRIBUTACAO",
+      "name": "Tributação",
+      "category": "finalistico",
+      "value_chain_group_id": "GRP-RECEITA",
+      "official_activities": [
+        "Definir e esclarecer normas de tributação",
+        "Gerir catálogo de valores de referência",
+        "Acompanhar regimes especiais e incentivos tributários"
+      ]
+    },
+    {
+      "id": "MP-ARRECADACAO",
+      "name": "Arrecadação",
+      "category": "finalistico",
+      "value_chain_group_id": "GRP-RECEITA",
+      "official_activities": [
+        "Realizar o controle fiscal do varejo",
+        "Gerir cadastro do contribuinte",
+        "Gerir arrecadação de impostos",
+        "Realizar o controle dos meios de pagamento",
+        "Gerir documentos fiscais eletrônicos",
+        "Gerir taxas",
+        "Inscrever contribuinte na dívida ativa",
+        "Gerir devolução de tributos"
+      ]
+    },
+    {
+      "id": "MP-ATENDIMENTO",
+      "name": "Atendimento",
+      "category": "finalistico",
+      "value_chain_group_id": "GRP-RECEITA",
+      "official_activities": [
+        "Gerir o atendimento aos contribuintes",
+        "Gerir carta de serviços"
+      ]
+    },
+    {
+      "id": "MP-MONITORAMENTO-FISCALIZACAO",
+      "name": "Monitoramento e Fiscalização",
+      "category": "finalistico",
+      "value_chain_group_id": "GRP-RECEITA",
+      "official_activities": [
+        "Planejar o monitoramento e fiscalização",
+        "Controlar mercadorias em trânsito",
+        "Realizar ações de fiscalização",
+        "Realizar o monitoramento dos contribuintes",
+        "Avaliar o monitoramento e a fiscalização",
+        "Realizar revisão fiscal",
+        "Realizar análise avançada de dados",
+        "Combater fraudes fiscais",
+        "Gerir comércio exterior",
+        "Gerir benefícios fiscais",
+        "Gerir programa de conformidade tributária"
+      ]
+    },
+    {
+      "id": "MP-CONTENCIOSO",
+      "name": "Contencioso",
+      "category": "finalistico",
+      "value_chain_group_id": "GRP-RECEITA",
+      "official_activities": [
+        "Editar provimento em matéria processual e súmulas referentes a julgados e reiterados",
+        "Decidir administrativamente as questões relativas à lavratura de autos de infração"
+      ]
+    },
+    {
+      "id": "MP-GESTAO-FISCAL",
+      "name": "Gestão Fiscal",
+      "category": "finalistico",
+      "value_chain_group_id": "GRP-SUSTENTABILIDADE",
+      "official_activities": [
+        "Monitorar a gestão fiscal",
+        "Analisar riscos fiscais",
+        "Gerir Programa de Reestruturação e Ajuste Fiscal - PAF"
+      ]
+    },
+    {
+      "id": "MP-GESTAO-ATIVOS",
+      "name": "Gestão dos Ativos",
+      "category": "finalistico",
+      "value_chain_group_id": "GRP-SUSTENTABILIDADE",
+      "official_activities": [
+        "Gerir recuperação dos créditos"
+      ]
+    },
+    {
+      "id": "MP-GESTAO-PASSIVOS",
+      "name": "Gestão dos Passivos",
+      "category": "finalistico",
+      "value_chain_group_id": "GRP-SUSTENTABILIDADE",
+      "official_activities": [
+        "Gerir a dívida pública do Estado",
+        "Controlar precatórios",
+        "Gerir encargos gerais do Estado"
+      ]
+    },
+    {
+      "id": "MP-GESTAO-FINANCEIRA",
+      "name": "Gestão Financeira",
+      "category": "finalistico",
+      "value_chain_group_id": "GRP-SUSTENTABILIDADE",
+      "official_activities": [
+        "Gerir as contas do Tesouro Estadual",
+        "Gerir as transferências intergovernamentais",
+        "Gerir a programação financeira"
+      ]
+    },
+    {
+      "id": "MP-CONTABILIDADE-INFORMACOES",
+      "name": "Contabilidade e Gestão das Informações Financeiras e Patrimoniais",
+      "category": "finalistico",
+      "value_chain_group_id": "GRP-SUSTENTABILIDADE",
+      "official_activities": [
+        "Estabelecer normas de gestão orçamentária, financeira, patrimonial e contábil",
+        "Coordenar a execução da contabilidade pública",
+        "Consolidar e divulgar informações e relatórios contábeis, orçamentários, fiscais e a prestação de contas anual"
+      ]
+    },
+    {
+      "id": "MP-PLANEJAMENTO-DESENVOLVIMENTO",
+      "name": "Planejamento e Desenvolvimento Institucional",
+      "category": "suporte",
+      "value_chain_group_id": "GRP-SUPORTE",
+      "official_activities": [
+        "Gerir planejamento estratégico",
+        "Realizar transformação de processos",
+        "Promover desenvolvimento institucional",
+        "Gerir instrumentos de planejamento do Governo Estadual",
+        "Gerir processos"
+      ]
+    },
+    {
+      "id": "MP-RELACIONAMENTO-SOCIEDADE",
+      "name": "Relacionamento com a Sociedade",
+      "category": "suporte",
+      "value_chain_group_id": "GRP-SUPORTE",
+      "official_activities": [
+        "Gerir comunicação externa",
+        "Gerir programa de educação fiscal",
+        "Gerir programa de incentivo à emissão de documentos fiscais",
+        "Gerir centro de memória da Sefaz"
+      ]
+    },
+    {
+      "id": "MP-GESTAO-CAPITAL-HUMANO",
+      "name": "Gestão do Capital Humano",
+      "category": "suporte",
+      "value_chain_group_id": "GRP-SUPORTE",
+      "official_activities": [
+        "Desenvolver pessoas",
+        "Realizar gestão previdenciária",
+        "Realizar recrutamento e seleção",
+        "Gerir exercício de terceirizados",
+        "Gerir exercício de servidores",
+        "Realizar eventos"
+      ]
+    },
+    {
+      "id": "MP-GESTAO-ORCAMENTARIA-FINANCEIRA",
+      "name": "Gestão Orçamentária e Financeira",
+      "category": "suporte",
+      "value_chain_group_id": "GRP-SUPORTE",
+      "official_activities": [
+        "Acompanhar execução do orçamento",
+        "Gerir pagamentos",
+        "Gerir compras e contratos"
+      ]
+    },
+    {
+      "id": "MP-GESTAO-TIC",
+      "name": "Gestão de TIC",
+      "category": "suporte",
+      "value_chain_group_id": "GRP-SUPORTE",
+      "official_activities": [
+        "Prover soluções de TIC",
+        "Prover governança de TIC",
+        "Realizar governança de dados",
+        "Gerir infraestrutura de TIC",
+        "Gerir serviços de TIC"
+      ]
+    },
+    {
+      "id": "MP-GESTAO-INFRAESTRUTURA-LOGISTICA",
+      "name": "Gestão de Infraestrutura e Logística",
+      "category": "suporte",
+      "value_chain_group_id": "GRP-SUPORTE",
+      "official_activities": [
+        "Gerir infraestrutura",
+        "Gerir logística de pessoas e materiais",
+        "Gerir patrimônio de bens",
+        "Gerir documentos (Protocolo Sefaz, Arquivo, Publicações DOE)"
+      ]
+    },
+    {
+      "id": "MP-INTEGRIDADE-ORGANIZACIONAL",
+      "name": "Integridade Organizacional",
+      "category": "suporte",
+      "value_chain_group_id": "GRP-SUPORTE",
+      "official_activities": [
+        "Realizar apuração preliminar",
+        "Realizar sindicância",
+        "Gerir funcionamento dos canais de ouvidoria",
+        "Gerir segurança corporativa",
+        "Gerir riscos e controles internos",
+        "Gerir processo de comissão de ética"
+      ]
+    },
+    {
+      "id": "MP-ASSESSORIA-JURIDICA",
+      "name": "Assessoria Jurídica",
+      "category": "suporte",
+      "value_chain_group_id": "GRP-SUPORTE",
+      "official_activities": [
+        "Assessorar demandas jurídicas"
+      ]
+    }
+  ],
+  "usage_constraints": {
+    "official_only": true,
+    "do_not_infer_process_hierarchy": true,
+    "allowed_association_levels": [
+      "strategic_outcome",
+      "value_chain_group",
+      "official_macroprocess",
+      "official_activity"
+    ],
+    "association_guidance": "Ao relacionar um sistema, esquema, conceito ou ativo técnico à cadeia de valor, use somente os macroprocessos e atividades listados neste arquivo. Quando não houver evidência suficiente, deixe a associação vazia ou marque como pendente de validação. Não crie novos processos, subprocessos ou atividades."
+  }
+}

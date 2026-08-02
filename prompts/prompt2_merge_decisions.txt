@@ -1,0 +1,42 @@
+Você é especialista em Governança de Dados, Engenharia de Software, Metadados, Modelagem de Dados e domínios fazendários.
+
+O sistema __SYSTEM_NAME_UPPER__, esquema __SCHEMA_NAME_UPPER__ da Sefaz-CE, teve seu Contexto Local Canônico gerado em múltiplos lotes (um por subconjunto de tabelas). Cada lote gerou seus próprios itens de forma independente, sem visão do esquema inteiro, então o mesmo conceito de negócio, domínio de valores, macroprocesso, referência externa ou sigla pode ter sido registrado mais de uma vez, com `id`s diferentes.
+
+Sua única tarefa aqui é **decidir quais itens abaixo representam a mesma coisa** e devem ser fundidos. Você NÃO deve reescrever, resumir ou copiar o conteúdo dos itens — apenas indicar quais `id`s (ou `sigla`s) devem ser unidos. Uma etapa em Python, fora desta chamada, faz a fusão de fato usando sua decisão.
+
+### Entrada
+Visão compacta dos itens candidatos a fusão, já sem o conteúdo pesado (evidências, regras, colunas etc.):
+```json
+__COMPACT_VIEW_JSON__
+```
+
+### Critérios de fusão
+- `business_concepts`: una entradas com o mesmo `preferred_name` normalizado (acentos, maiúsculas/minúsculas, singular/plural), ou cujos `original_names`/`synonym_candidates` se sobrepõem claramente ao `preferred_name` de outra entrada.
+- `value_domains`: una apenas quando a evidência (nome, descrição e valores) indicar que é o mesmo domínio de negócio. Não una domínios só porque têm os mesmos códigos — códigos genéricos como "1"/"2"/"S"/"N" se repetem entre domínios completamente diferentes.
+- `official_macroprocesses`: una entradas cujo `name` corresponde claramente ao mesmo macroprocesso oficial da cadeia de valor, mesmo com `id`s diferentes.
+- `external_references`: una entradas que apontam para o mesmo sistema/domínio externo (mesmo `external_system` e `external_domain`, ou nomes equivalentes).
+- `siglas_e_abreviaturas`: una entradas com a mesma sigla escrita de formas equivalentes (maiúsculas/minúsculas, com/sem pontuação).
+
+Não una itens só porque parecem relacionados — só quando representarem claramente o mesmo conceito/domínio/processo/sistema/sigla. Na dúvida, não una.
+
+Se, ao comparar os itens, você notar que dois lotes deram significados ou nomes claramente conflitantes para o que parece ser o mesmo item (por exemplo, dois `value_domains` com o mesmo propósito mas valores incompatíveis), não os una — registre isso em `new_conflicts`.
+
+### Regras gerais
+- Escreva em português do Brasil.
+- Use somente os `id`s/`sigla`s que aparecem na entrada. Não invente `id`s novos.
+- Cada `id`/`sigla` de origem (`merge_ids`/`merge_siglas`) deve aparecer em no máximo um grupo.
+- Retorne somente JSON válido, sem markdown, sem texto antes ou depois do JSON.
+
+### Estrutura obrigatória de saída
+```json
+{
+  "business_concepts_merges": [{"keep_id": "", "merge_ids": [""]}],
+  "value_domains_merges": [{"keep_id": "", "merge_ids": [""]}],
+  "official_macroprocesses_merges": [{"keep_id": "", "merge_ids": [""]}],
+  "external_references_merges": [{"keep_id": "", "merge_ids": [""]}],
+  "siglas_merges": [{"keep_sigla": "", "merge_siglas": [""]}],
+  "new_conflicts": [{"id": "", "subject": "", "description": "", "evidence": [], "recommended_validation_profile": ""}]
+}
+```
+
+Se não houver fusões ou conflitos para uma categoria, retorne a lista vazia para ela.

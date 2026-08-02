@@ -1,0 +1,164 @@
+{
+  "context_metadata": {
+    "artifact_type": "local_canonical_context",
+    "artifact_version": "1.0",
+    "organization": "Secretaria da Fazenda do Estado do Ceará",
+    "organization_acronym": "Sefaz-CE",
+    "system_id": "",
+    "system_name": "",
+    "schema": "",
+    "business_domain": "",
+    "generated_from": [],
+    "warnings": []
+  },
+  "official_macroprocesses": [
+    {
+      "id": "",
+      "name": "",
+      "associated_concepts": [],
+      "associated_capabilities": [],
+      "associated_rules": [],
+      "evidence": [],
+      "confidence": 0
+    }
+  ],
+  "functional_capabilities_inferred": [
+    {
+      "id": "",
+      "name": "",
+      "description": "",
+      "concepts": [],
+      "technical_assets": [],
+      "official_macroprocesses": [],
+      "evidence": [],
+      "evidence_classification": "",
+      "confidence": 0
+    }
+  ],
+  "business_concepts": [
+    {
+      "id": "",
+      "preferred_name": "",
+      "original_names": [],
+      "synonym_candidates": [],
+      "type": "",
+      "description_evidence": "",
+      "scope": "",
+      "related_capabilities": [],
+      "official_macroprocesses": [],
+      "technical_assets": [],
+      "business_rules": [],
+      "value_domains": [],
+      "external_references": [],
+      "evidence": [],
+      "evidence_classification": "",
+      "confidence": 0,
+      "validation_required": false
+    }
+  ],
+  "business_rules": [
+    {
+      "id": "",
+      "description": "",
+      "concepts": [],
+      "condition": "",
+      "effect": "",
+      "exceptions": [],
+      "technical_expression_summary": "",
+      "evidence": [],
+      "evidence_classification": "",
+      "confidence": 0
+    }
+  ],
+  "value_domains": [
+    {
+      "id": "",
+      "name": "",
+      "description": "",
+      "values": [
+        { "code": "", "label": "", "description": "" }
+      ],
+      "used_by": [],
+      "evidence": [],
+      "evidence_classification": "",
+      "confidence": 0
+    }
+  ],
+  "concept_relationships": [
+    {
+      "id": "",
+      "source_concept_id": "",
+      "relationship": "",
+      "target_concept_id": "",
+      "target_name": "",
+      "target_domain": "",
+      "external_reference": false,
+      "description": "",
+      "evidence": [],
+      "evidence_classification": "",
+      "confidence": 0
+    }
+  ],
+  "external_references": [
+    {
+      "id": "",
+      "name": "",
+      "external_system": "",
+      "external_domain": "",
+      "relationship_to_local_context": "",
+      "local_concepts": [],
+      "evidence": [],
+      "definition_status": "external_definition_required",
+      "confidence": 0
+    }
+  ],
+  "technical_assets": [
+    {
+      "id": "",
+      "asset_type": "",
+      "system": "",
+      "schema": "",
+      "name": "",
+      "role": "",
+      "business_concepts": [],
+      "primary_keys": [],
+      "foreign_keys": [],
+      "relevant_columns": [],
+      "source_reference": "",
+      "confidence": 0
+    }
+  ],
+  "evidence_index": [
+    {
+      "id": "",
+      "source_type": "",
+      "source_file": "",
+      "technical_location": "",
+      "summary": ""
+    }
+  ],
+  "conflicts": [
+    {
+      "id": "",
+      "subject": "",
+      "description": "",
+      "evidence": [],
+      "recommended_validation_profile": ""
+    }
+  ],
+  "quality_warnings": [
+    {
+      "type": "",
+      "description": "",
+      "affected_items": []
+    }
+  ],
+  "siglas_e_abreviaturas": [
+    {
+      "sigla": "",
+      "forma_extensa": "",
+      "definicao": "",
+      "fonte": []
+    }
+  ]
+}

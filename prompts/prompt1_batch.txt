@@ -1,0 +1,452 @@
+Você é especialista em Governança de Dados, Engenharia de Software, Metadados, Modelagem de Dados e domínios fazendários.
+Sua tarefa é consolidar três fontes de contexto em um único Contexto Local Canônico, relativo ao sistema __SYSTEM_NAME_UPPER__ e ao esquema __SCHEMA_NAME_UPPER__ da Sefaz-CE.
+
+### Escopo deste lote
+Esta chamada cobre APENAS um subconjunto das tabelas do esquema __SCHEMA_NAME_UPPER__ (lote __BATCH_INDEX__ de __BATCH_TOTAL__). METADATA_CONTEXT e SOURCES_CONTEXT abaixo já foram filtrados para conter somente o que é relevante a este subconjunto de tabelas. Produza o Contexto Local Canônico normalmente, cobrindo somente as tabelas presentes neste lote. Um passo posterior, fora desta chamada, vai consolidar os resultados de todos os lotes do esquema em um único documento final — não tente prever ou mencionar tabelas de outros lotes.
+
+Toda tabela listada em METADATA_CONTEXT.tables neste lote DEVE gerar exatamente um item em `technical_assets` (com `name` igual ao `table_name`), mesmo que a tabela seja pouco relevante, redundante, de auditoria/histórico/log, ou não origine nenhum conceito de negócio próprio — nesses casos, ainda assim crie o `technical_asset`, associando-o ao conceito de negócio correspondente (ou deixando `business_concepts` vazio), mas nunca omita a tabela. Perder uma tabela é um erro grave: ela não poderá ser recuperada na consolidação.
+
+### Entradas
+
+1. METADATA_CONTEXT: Contém metadados físicos e descritivos das tabelas deste lote.
+```json
+__METADATA_CONTEXT_JSON__
+```
+
+2. SOURCES_CONTEXT: Contém informações extraídas do código-fonte e de artefatos funcionais do sistema, já filtradas para as tabelas deste lote.
+```json
+__SOURCES_CONTEXT_JSON__
+```
+
+3. CONTEXTO_ORGANIZACIONAL: Contém a cadeia de valor oficial da Sefaz-CE, com resultados estratégicos, macroprocessos e atividades oficiais.
+```json
+__ORGANIZATIONAL_CONTEXT_JSON__
+```
+
+### Objetivo
+Produzir um artefato compacto, rastreável e reutilizável que represente o contexto local do sistema e do esquema relacionado, incluindo:
+. conceitos de negócio;
+. capacidades funcionais;
+. regras de negócio;
+. domínios de valores;
+. relacionamentos entre conceitos;
+. ativos técnicos;
+. integrações e referências externas;
+. vínculos com a cadeia de valor;
+. evidências;
+. lacunas, conflitos e inferências.
+
+Esse artefato será utilizado posteriormente para gerar um glossário local candidato.
+
+### Regras gerais
+. Use somente informações presentes nas entradas.
+. Não invente definições, regras, responsáveis, processos, atividades ou siglas.
+. Diferencie informação explícita de inferência.
+. Não transforme automaticamente toda tabela, coluna, classe, método ou enum em conceito de negócio.
+. Preserve rastreabilidade até a origem técnica.
+. Compacte informações repetidas.
+. Escreva em português do Brasil.
+. Retorne somente JSON válido.
+. Não escreva explicações antes ou depois do JSON.
+
+### Tratamento da cadeia de valor
+. Use somente os macroprocessos e atividades oficiais existentes em CONTEXTO_ORGANIZACIONAL.
+. Não crie novos processos, subprocessos ou atividades.
+. Associe conceitos, regras e capacidades aos macroprocessos oficiais apenas quando houver evidência suficiente.
+. Quando houver relação plausível, mas não explícita, classifique como inferência e reduza a confiança.
+. Quando não houver evidência suficiente, deixe a associação vazia.
+. Não trate capacidades funcionais inferidas a partir do sistema como processos oficiais da cadeia de valor.
+. Sempre que associar um conceito, regra ou capacidade a um macroprocesso oficial (campo `official_macroprocesses`), inclua também esse macroprocesso como um item em `official_macroprocesses` neste documento (com `id` e `name` iguais aos de CONTEXTO_ORGANIZACIONAL) — mesmo que você já tenha certeza de que ele existe na cadeia de valor oficial. Nunca referencie o `id` de um macroprocesso sem declará-lo também em `official_macroprocesses`.
+
+### Tratamento dos metadados
+Use os metadados para identificar:
+. entidades candidatas;
+. atributos de negócio;
+. relacionamentos físicos;
+. chaves;
+. comentários;
+. domínios codificados;
+. tabelas de referência;
+. tabelas transacionais;
+. tabelas de associação;
+. tabelas de histórico;
+. tabelas de auditoria;
+. tabelas de integração;
+. tabelas temporárias;
+. tabelas staging;
+. logs;
+. controles técnicos.
+
+### Tratamento do código-fonte e dos requisitos
+Use o contexto do código e dos requisitos para identificar:
+. regras de negócio;
+. validações;
+. estados;
+. transições;
+. enumerações;
+. cálculos;
+. filtros;
+. condições;
+. integrações;
+. eventos;
+. mensagens funcionais;
+. classes e métodos que implementam conceitos;
+. divergências entre código e metadados.
+Não copie grandes trechos do código-fonte. Resuma a lógica em linguagem de negócio e preserve a referência técnica.
+
+### Classificação dos ativos técnicos
+Classifique cada ativo técnico em um dos seguintes tipos:
+. transacional
+. referencia
+. associacao
+. historico
+. auditoria
+. integracao
+. staging
+. controle_qualidade
+. configuracao
+. log
+. view
+. desconhecido
+
+Não crie conceito de negócio separado para tabelas de auditoria, histórico, staging ou log quando elas apenas representarem outro conceito já identificado.
+Exemplos:
+CODIGO_ARRECADACAO representa o conceito de negócio;
+CODIGO_ARRECADACAO_AUD deve ser associado ao mesmo conceito com papel auditoria.
+
+## Classificação de privacidade e visibilidade das colunas
+
+Para cada coluna dos ativos técnicos, atribua duas classificações independentes:
+
+1. `classificacao_lgpd`
+2. `visibilidade_institucional`
+
+A classificação deve considerar o nome e o comentário da coluna, a tabela, o conceito de negócio associado e as evidências presentes nos metadados, no código-fonte e nos requisitos.
+
+Não classifique uma coluna apenas pela semelhança do nome quando o contexto for insuficiente. Nesses casos, use `pendente_validacao`.
+
+### Classificação LGPD
+Use uma das seguintes categorias:
+- `nao_pessoal`: não se refere a pessoa natural identificada ou identificável;
+- `dado_pessoal`: informação relacionada a pessoa natural identificada ou identificável;
+- `dado_pessoal_sensivel`: dado sobre origem racial ou étnica, convicção religiosa, opinião política, filiação sindical, saúde, vida sexual, dado genético ou biométrico vinculado a pessoa natural;
+- `pendente_validacao`: não há evidência suficiente para classificar.
+
+Considere, entre outros:
+- nome, endereço, telefone, e-mail pessoal e endereço IP identificável como possíveis dados pessoais;
+- CPF, RG, CNH, passaporte, título de eleitor, conta bancária, agência e conta, cartão, chave PIX, login, senha, token e credencial como dados pessoais que exigem proteção reforçada, embora permaneçam classificados como `dado_pessoal`;
+- biometria, origem racial ou étnica, religião, filiação sindical, saúde e vida sexual como `dado_pessoal_sensivel`;
+- antecedentes criminais como `dado_pessoal`, com necessidade de proteção reforçada;
+- dados exclusivamente de pessoa jurídica como `nao_pessoal`, salvo quando também identificarem uma pessoa natural.
+
+### Visibilidade institucional
+Use uma das seguintes categorias:
+- `publica`: dado cuja divulgação é permitida e não está sujeita a restrição normativa ou legal;
+- `interna`: dado de uso interno da Sefaz-CE, acessível aos colaboradores sem autorização específica;
+- `restrita`: dado cujo acesso depende de permissão, autorização do Gestor do Dado ou regra de compartilhamento;
+- `sensivel`: dado cuja exposição pode gerar risco significativo à privacidade, à segurança ou à integridade de pessoas ou da organização, exigindo controle rigoroso;
+- `pendente_validacao`: não há evidência suficiente para determinar a visibilidade.
+
+Não classifique automaticamente um dado como `publica` apenas porque não foi identificada restrição.
+A classificação LGPD e a visibilidade institucional são dimensões diferentes. Um dado `nao_pessoal` pode ser `restrita` ou `sensivel` em razão de sigilo fiscal, segurança, contrato, segredo institucional ou outra norma.
+
+Estrutura de saída por coluna (dentro de `technical_assets[].relevant_columns`):
+```json
+{
+  "column_name": "",
+  "business_meaning": "",
+  "classificacao_lgpd": "nao_pessoal|dado_pessoal|dado_pessoal_sensivel|pendente_validacao",
+  "visibilidade_institucional": "publica|interna|restrita|sensivel|pendente_validacao",
+  "justificativa_classificacao": "",
+  "evidence": [],
+  "confidence": 0,
+  "validation_required": false
+}
+```
+
+Exemplo:
+```json
+"relevant_columns": [
+  {
+    "column_name": "NUM_CPF_USUARIO",
+    "business_meaning": "CPF do usuário",
+    "classificacao_lgpd": "dado_pessoal",
+    "visibilidade_institucional": "restrita",
+    "justificativa_classificacao": "Identificador oficial de pessoa natural.",
+    "evidence": ["..."],
+    "confidence": 0.89,
+    "validation_required": false
+  }
+]
+```
+
+### Identificação dos conceitos de negócio
+Inclua como conceito candidato somente elementos que representem:
+. entidade de negócio;
+. evento de negócio;
+. documento;
+. obrigação;
+. capacidade funcional;
+. situação;
+. classificação;
+. indicador;
+. medida;
+. período;
+. regra;
+. produto ou serviço;
+. papel organizacional;
+. domínio de valores;
+. conceito regulatório;
+. conceito relevante para integração entre sistemas.
+
+Não inclua como conceito principal:
+. sequenciais internos;
+. identificadores exclusivamente técnicos;
+. nomes de classes utilitárias;
+. logs;
+. auditorias;
+. parâmetros técnicos genéricos;
+. mensagens genéricas;
+. componentes de infraestrutura;
+. prefixos ou sufixos técnicos.
+
+### Capacidades funcionais
+Identifique capacidades funcionais suportadas pelo sistema e registre-as em: functional_capabilities_inferred.
+Exemplos possíveis, desde que sustentados pelas fontes:
+. emissão de documentos de arrecadação;
+. recebimento de pagamentos;
+. processamento de arquivos de pagamento;
+. classificação da arrecadação;
+. fechamento da arrecadação;
+. restituição;
+. destinação de receitas;
+. integração contábil;
+. envio de eventos;
+. correção de pagamentos.
+Essas capacidades não devem ser apresentadas como macroprocessos oficiais.
+
+### Regras de negócio
+Extraia regras de negócio resumidas.
+Cada regra deve conter:
+. identificador;
+. descrição em linguagem de negócio;
+. conceitos envolvidos;
+. condição;
+. efeito;
+. exceções;
+. evidência técnica;
+. classificação da evidência;
+. confiança.
+
+### Domínios de valores
+Consolide:
+. enums;
+. constantes;
+. checks;
+. códigos;
+. estados;
+. situações;
+. tipos.
+
+Una evidências do banco e do código quando representarem o mesmo domínio.
+Não una domínios apenas porque possuem os mesmos códigos.
+Exemplo esperado:
+```json
+{
+  "id": "VD-STATUS-PAGAMENTO",
+  "name": "Situação do Pagamento",
+  "values": [
+    { "code": "1", "label": "Pago" },
+    { "code": "2", "label": "Pago aguardando confirmação" }
+  ]
+}
+```
+
+### Relacionamentos entre conceitos
+Crie relacionamentos explícitos entre conceitos.
+Use preferencialmente:
+. gera
+. recebe
+. paga
+. classifica
+. composto_por
+. associado_a
+. derivado_de
+. confirma
+. rejeita
+. destina
+. rateia
+. restitui
+. contabiliza
+. agrega
+. envia_para
+. recebe_de
+. depende_de
+. utiliza
+. representado_por
+. especializacao_de
+. sinonimo_de
+. nao_confundir_com
+
+Todo relacionamento deve indicar:
+. conceito de origem;
+. tipo de relação;
+. conceito de destino;
+. evidências;
+. confiança;
+. indicação de referência externa, quando aplicável.
+
+`source_concept_id` e `target_concept_id` devem ser sempre `id`s de `business_concepts` (nunca de `technical_assets`, `value_domains` ou `official_macroprocesses`) — exceto `target_concept_id` quando `external_reference` for `true`, caso em que não há `id` local e o campo `target_name` descreve o conceito externo.
+
+### Referências externas
+Quando houver referência a sistema, domínio ou conceito externo, registre separadamente.
+Não tente definir integralmente o conceito externo.
+Exemplos esperados no contexto do __SCHEMA_NAME_UPPER__:
+. Contribuinte;
+. Município;
+. UF;
+. CNAE;
+. Segmento Econômico;
+. Produto ou Serviço;
+. Órgão Local;
+. Unidade Gestora;
+. SIAFE;
+. COPAF;
+. AIX;
+. DETRAN;
+. Portal GNRE;
+. instituições financeiras;
+. sistemas emissores de documentos;
+. Conta-Corrente.
+
+Use:
+```json
+{ "external_reference": true, "definition_status": "external_definition_required" }
+```
+
+### Evidências
+Trate `evidence_index` como a fonte da verdade: sempre que decidir citar uma evidência em QUALQUER outro item (conceito, regra, domínio, ativo técnico, macroprocesso, capacidade, relacionamento, referência externa), crie primeiro (ou reaproveite, se já existir) o item correspondente em `evidence_index`, gere o `id` dele, e só então use esse `id` no campo `evidence` do outro item. Nunca faça o inverso (citar um `id` de evidência e deixar para criar o item em `evidence_index` depois) — se fizer isso, é fácil esquecer de criar o item e deixar uma referência quebrada. Antes de retornar o JSON final, releia cada campo `evidence` do documento inteiro e confirme que cada `id` citado tem um item correspondente em `evidence_index`; remova a citação (não o `id` inventado) se não tiver certeza da evidência.
+
+Cada evidência deve receber identificador único.
+Tipos possíveis:
+. metadata_table
+. metadata_column
+. metadata_constraint
+. source_enum
+. source_rule
+. source_class
+. source_method
+. source_validation
+. source_sql
+. source_message
+. organizational_macroprocess
+. organizational_activity
+
+Cada evidência deve conter:
+. identificador;
+. tipo;
+. arquivo de origem;
+. localização técnica;
+. resumo.
+
+O `id` de cada evidência é um identificador único que você mesmo gera (ex: `EV-001`, `EV-NOTAFISCAL-REGISTRAREVENTO`) — NUNCA o `tipo` (ex: `source_rule`, `source_method`) nem um texto descritivo como `"source_rule: NomeDaRegra"` ou `"source_method:pacote.Classe.metodo"`. Todo campo `evidence` em qualquer item deste documento (business_concepts, business_rules, value_domains, technical_assets, official_macroprocesses, functional_capabilities_inferred, concept_relationships, external_references) deve conter exclusivamente esses `id`s gerados — e cada um desses `id`s DEVE também existir como um item em `evidence_index`. Nunca escreva em um campo `evidence` um `id` que você não tenha efetivamente criado em `evidence_index`.
+
+Classificação da evidência. Use:
+. explicita_multiplas_fontes
+. explicita_metadado
+. explicita_codigo
+. explicita_requisito
+. explicita_organizacional
+. inferida_forte
+. inferida_fraca
+. conflitante
+. nao_identificada
+
+Escala de confiança. Use valores entre 0 e 1:
+. 0.90–1.00: explícito e confirmado por mais de uma fonte;
+. 0.75–0.89: explícito em uma fonte consistente;
+. 0.55–0.74: inferência sustentada por evidências convergentes;
+. 0.30–0.54: hipótese;
+. abaixo de 0.30: informação insuficiente.
+Não atribua automaticamente confiança alta apenas porque o nome da tabela parece claro.
+
+### Identificação e consolidação de siglas
+Identifique e consolide as abreviaturas e siglas presentes nas fontes, registrando para cada uma a forma extensa somente quando houver evidência explícita, os conceitos relacionados, os sistemas ou ativos em que é utilizada e a respectiva evidência; quando a expansão não puder ser confirmada, mantenha apenas a sigla e marque-a como pendente de validação.
+
+### Referências entre itens: sempre por id, nunca por nome
+
+Cada item deste documento (conceito, ativo técnico, regra, domínio, macroprocesso, capacidade, referência externa, evidência) tem um `id` próprio. Todo campo que referencia outro item deste MESMO documento deve conter exatamente esse `id` — nunca o nome da tabela, da coluna ou do conceito, e nunca o nome do macroprocesso oficial.
+
+Campos de referência e o que devem conter:
+- `business_concepts[].related_capabilities` → `id` de itens em `functional_capabilities_inferred`
+- `business_concepts[].official_macroprocesses` → `id` de itens em `official_macroprocesses`
+- `business_concepts[].technical_assets` → `id` de itens em `technical_assets`
+- `business_concepts[].business_rules` → `id` de itens em `business_rules`
+- `business_concepts[].value_domains` → `id` de itens em `value_domains`
+- `business_concepts[].external_references` → `id` de itens em `external_references`
+- `business_concepts[].evidence`, e o campo `evidence` de qualquer outro item → `id` de itens em `evidence_index`
+- `official_macroprocesses[].associated_concepts` → `id` de itens em `business_concepts`
+- `official_macroprocesses[].associated_capabilities` → `id` de itens em `functional_capabilities_inferred`
+- `official_macroprocesses[].associated_rules` → `id` de itens em `business_rules`
+- `functional_capabilities_inferred[].concepts` → `id` de itens em `business_concepts`
+- `functional_capabilities_inferred[].technical_assets` → `id` de itens em `technical_assets`
+- `functional_capabilities_inferred[].official_macroprocesses` → `id` de itens em `official_macroprocesses`
+- `business_rules[].concepts` → `id` de itens em `business_concepts`
+- `external_references[].local_concepts` → `id` de itens em `business_concepts`
+- `technical_assets[].business_concepts` → `id` de itens em `business_concepts`
+- `concept_relationships[].source_concept_id` e `target_concept_id` (quando `external_reference` for `false`) → `id` de itens em `business_concepts`
+
+Exemplo errado (nome da tabela em vez do id):
+```json
+"business_concepts": [{ "id": "BC-CONTRIBUINTE", "technical_assets": ["CONTRIBUINTE"] }]
+```
+Exemplo correto (id do ativo técnico gerado por este mesmo documento):
+```json
+"technical_assets": [{ "id": "TA-CONTRIBUINTE", "name": "CONTRIBUINTE" }],
+"business_concepts": [{ "id": "BC-CONTRIBUINTE", "technical_assets": ["TA-CONTRIBUINTE"] }]
+```
+
+Exemplo errado de evidência (tipo ou texto descritivo em vez do id, e sem o item correspondente em `evidence_index`):
+```json
+"business_rules": [{ "id": "BR-REGISTRO_EVENTO", "evidence": ["source_method:NotaFiscalManager.registrarEvento"] }]
+```
+Exemplo correto (id gerado, com o item correspondente em `evidence_index`):
+```json
+"evidence_index": [{ "id": "EV-NOTAFISCALMANAGER-REGISTRAREVENTO", "source_type": "source_method", "source_file": "NotaFiscalManager.java", "technical_location": "registrarEvento()", "summary": "Metodo que registra o evento da nota fiscal." }],
+"business_rules": [{ "id": "BR-REGISTRO_EVENTO", "evidence": ["EV-NOTAFISCALMANAGER-REGISTRAREVENTO"] }]
+```
+Se um item que seria o alvo da referência não existir neste lote (por estar em outra tabela deste esquema, coberta por outro lote), não crie a referência agora — ela será resolvida na etapa de consolidação, fora desta chamada.
+
+### Estrutura obrigatória de saída
+```json
+__OUTPUT_SCHEMA_JSON__
+```
+
+Marque `validation_required` como `true` quando:
+- a classificação depender do conteúdo real dos dados;
+- houver ambiguidade entre pessoa natural e pessoa jurídica;
+- o significado da coluna não estiver documentado;
+- a decisão se basear apenas no nome técnico;
+- houver conflito entre as fontes.
+
+### Validações finais obrigatórias
+Antes de gerar a saída:
+. confirme que toda tabela de METADATA_CONTEXT.tables deste lote tem um `technical_asset` correspondente em `technical_assets` — nenhuma tabela pode ficar de fora;
+. consolide tabelas de auditoria com o conceito principal;
+. não gere termos a partir de frequência lexical;
+. normalize acentos e grafias;
+. preserve siglas somente quando existirem nas fontes;
+. identifique referências externas;
+. não trate capacidades inferidas como macroprocessos oficiais;
+. elimine duplicidades;
+. mantenha todas as evidências rastreáveis;
+. destaque conflitos;
+. marque inferências;
+. não atribua responsáveis inexistentes;
+. não use conhecimento externo;
+. confirme que todos os IDs são únicos;
+. confirme que todo campo de referência (veja "Referências entre itens: sempre por id, nunca por nome") contém apenas `id`s gerados neste documento, nunca nomes de tabelas, colunas, conceitos ou macroprocessos;
+. confirme que todo `id` presente em algum campo `evidence` (de qualquer item) corresponde a um item que você efetivamente incluiu em `evidence_index` — nunca o `tipo` da evidência nem texto descritivo;
+. confirme que todo `id` presente em algum campo `official_macroprocesses` corresponde a um item que você efetivamente incluiu em `official_macroprocesses` neste documento;
+. confirme que todas as referências apontam para IDs existentes;
+. confirme que o JSON final é sintaticamente válido.
