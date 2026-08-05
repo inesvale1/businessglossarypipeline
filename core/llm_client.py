@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
+import tempfile
 from dataclasses import dataclass
 from typing import Any, Optional
 
@@ -20,47 +22,21 @@ def _read_keyring(service: str, username: str) -> str:
         return ""
 
 
-def _build_proxy_http_client() -> Optional[httpx.Client]:
-    """Build an httpx client that authenticates against a corporate proxy, if configured.
-
-    The proxy itself is detected the same way urllib does (env vars first,
-    falling back to the OS-level config on Windows/macOS), because this
+def _detect_proxy_url() -> Optional[str]:
+    """Detect the corporate proxy the same way urllib does: env vars first,
+    falling back to the OS-level config on Windows/macOS, since this
     network's proxy is configured system-wide and is not exposed through
-    HTTPS_PROXY/HTTP_PROXY.
-
-    Credentials are embedded as Basic auth directly in the proxy URL: httpcore
-    only ever sends Proxy-Authorization on the initial CONNECT when
-    credentials are embedded that way. An `auth=` object authenticates the
-    *request* that flows through an already-established tunnel, so it never
-    gets a chance to run if the CONNECT itself is rejected with 407.
-    """
+    HTTPS_PROXY/HTTP_PROXY."""
     from urllib.request import getproxies
 
     proxy_info = getproxies()
-    proxy_url = (
+    return (
         os.environ.get("HTTPS_PROXY")
         or os.environ.get("HTTP_PROXY")
         or proxy_info.get("https")
         or proxy_info.get("http")
+        or None
     )
-    if not proxy_url:
-        return None
-
-    proxy_user = os.environ.get("PROXY_USER", "")
-    proxy_pass = os.environ.get("PROXY_PASS", "")
-    if proxy_user and not proxy_pass:
-        proxy_pass = _read_keyring("catalogo-semantico-proxy", proxy_user)
-
-    if proxy_user and proxy_pass:
-        from urllib.parse import urlparse, urlunparse
-        parsed = urlparse(proxy_url)
-        if not parsed.username:
-            netloc = f"{proxy_user}:{proxy_pass}@{parsed.hostname}"
-            if parsed.port:
-                netloc += f":{parsed.port}"
-            proxy_url = urlunparse(parsed._replace(netloc=netloc))
-
-    return httpx.Client(proxy=proxy_url)
 
 
 @dataclass
@@ -170,32 +146,25 @@ class LLMClient:
         return headers
 
     def _post_json(self, payload: dict[str, Any]) -> str | None:
-        http_client = _build_proxy_http_client()
+        self.last_error = ""
+        self.last_finish_reason = ""
+        endpoint = self._build_endpoint()
+
+        proxy_url = _detect_proxy_url()
         try:
-            self.last_error = ""
-            self.last_finish_reason = ""
-            endpoint = self._build_endpoint()
-            owns_client = http_client is None
-            client = http_client or httpx.Client()
-            try:
-                response = client.post(
-                    endpoint,
-                    json=payload,
-                    headers=self._build_headers(),
-                    timeout=self.timeout_seconds,
-                )
-                response.raise_for_status()
-                body = response.json()
-            finally:
-                if owns_client:
-                    client.close()
-        except httpx.HTTPStatusError as exc:
-            self.last_error = self._format_http_error(exc)
-            return None
+            if proxy_url:
+                status_code, response_text = self._post_via_curl(endpoint, payload, proxy_url)
+            else:
+                status_code, response_text = self._post_via_httpx(endpoint, payload)
         except Exception as exc:
             self.last_error = str(exc)
             return None
 
+        if status_code < 200 or status_code >= 300:
+            self.last_error = self._format_http_error(status_code, response_text)
+            return None
+
+        body = json.loads(response_text)
         choices = body.get("choices", [])
         if not choices:
             self.last_error = "Empty choices returned by LLM API."
@@ -204,16 +173,88 @@ class LLMClient:
         content = choices[0].get("message", {}).get("content", "")
         return str(content).strip() or None
 
-    def _format_http_error(self, exc: httpx.HTTPStatusError) -> str:
+    def _post_via_httpx(self, endpoint: str, payload: dict[str, Any]) -> tuple[int, str]:
+        with httpx.Client() as client:
+            response = client.post(
+                endpoint,
+                json=payload,
+                headers=self._build_headers(),
+                timeout=self.timeout_seconds,
+            )
+        return response.status_code, response.text
+
+    def _post_via_curl(self, endpoint: str, payload: dict[str, Any], proxy_url: str) -> tuple[int, str]:
+        """Send the request through curl instead of httpx.
+
+        This network's proxy (Skyhigh Secure Web Gateway) enforces NTLM proxy
+        authentication and rejects Basic auth outright, even with correct
+        credentials (confirmed via a raw CONNECT probe). httpx/httpcore has
+        no NTLM support. curl on Windows is built against SSPI, so
+        `--proxy-ntlm --proxy-user :` transparently authenticates using the
+        current Windows-domain login (single sign-on) -- no password needed.
+        `--ssl-revoke-best-effort` avoids hard failures when the corporate
+        gateway also blocks OCSP/CRL revocation checks.
+        """
+        headers = self._build_headers()
+        header_args = []
+        for key, value in headers.items():
+            header_args += ["-H", f"{key}: {value}"]
+
+        # Default to SSPI single sign-on (no password sent at all). Stored
+        # credentials are opt-in only (PROXY_USE_EXPLICIT_CREDS=1), because a
+        # wrong stored password sent on every batch call risks tripping an
+        # AD account lockout -- SSO reuses the already-validated Windows
+        # logon instead of guessing a password.
+        proxy_user_arg = ":"
+        if os.environ.get("PROXY_USE_EXPLICIT_CREDS") == "1":
+            proxy_user = os.environ.get("PROXY_USER", "")
+            proxy_pass = os.environ.get("PROXY_PASS", "") or _read_keyring("catalogo-semantico-proxy", proxy_user)
+            if proxy_user and proxy_pass:
+                proxy_user_arg = f"{proxy_user}:{proxy_pass}"
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as body_file:
+            body_path = body_file.name
+
+        try:
+            cmd = [
+                "curl.exe", "-sS",
+                "--proxy", proxy_url,
+                "--proxy-ntlm", "--proxy-user", proxy_user_arg,
+                "--ssl-revoke-best-effort",
+                "-X", "POST", endpoint,
+                *header_args,
+                "--data-binary", "@-",
+                "-o", body_path,
+                "-w", "%{http_code}",
+                "--max-time", str(self.timeout_seconds),
+            ]
+            result = subprocess.run(
+                cmd,
+                input=json.dumps(payload).encode("utf-8"),
+                capture_output=True,
+                timeout=self.timeout_seconds + 10,
+            )
+            with open(body_path, "r", encoding="utf-8") as handle:
+                body_text = handle.read()
+        finally:
+            os.unlink(body_path)
+
+        if result.returncode != 0:
+            raise RuntimeError(f"curl falhou (exit {result.returncode}): {result.stderr.decode(errors='replace').strip()}")
+
+        status_code = int(result.stdout.decode().strip() or "0")
+        return status_code, body_text
+
+    def _format_http_error(self, status_code: int, response_text: str) -> str:
         detail = ""
         try:
-            parsed = json.loads(exc.response.text)
+            parsed = json.loads(response_text)
             if isinstance(parsed, dict):
                 err = parsed.get("error", {})
                 detail = str(err.get("message", "")).strip() if isinstance(err, dict) else ""
                 if not detail:
-                    detail = exc.response.text.strip()
+                    detail = response_text.strip()
         except Exception:
-            detail = str(exc)
-        summary = f"HTTP {exc.response.status_code} {exc.response.reason_phrase}".strip()
+            detail = response_text.strip()
+        summary = f"HTTP {status_code}"
         return f"{summary}: {detail}".strip(": ")

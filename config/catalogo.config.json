@@ -1,7 +1,7 @@
 {
   "schema_root": "schema",
   "organizational_context_path": "semanticcatalog/docs/organizational_context_value_chain_sefaz_ce.json",
-  "schemas": ["cadastro", "sitram2"],
+  "schemas": ["sitram2", "receita2", "cadastro"],
   "batching": {
     "max_batch_bytes": 40000
   },
