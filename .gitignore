@@ -1,0 +1,6 @@
+# Checkouts locais de repositorios internos (codigo-fonte proprietario) --
+# clonados por core/git_source.py, nunca devem ir para este repositorio.
+.checkouts/
+
+__pycache__/
+*.pyc

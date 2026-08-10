@@ -35,7 +35,7 @@ def load_schema_inputs(
     if not metadata_context_path.exists():
         raise FileNotFoundError(
             f"metadata_context_{schema_name}.json not found under {inputs_dir}. "
-            "Run the dataquality metadata-context build for this schema first."
+            "Run technicalcatalogpipeline/scripts/build_technical_catalog.py for this schema first."
         )
     metadata_context = _read_json(metadata_context_path)
 

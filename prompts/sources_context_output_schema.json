@@ -1,0 +1,69 @@
+{
+  "sistema": "string - nome curto do sistema (ex: receita)",
+  "pacote_raiz": "string - pacote Java raiz do sistema (ex: br.gov.ce.sefaz.receita)",
+  "gerado_em": "string - timestamp ISO 8601 (preenchido automaticamente pelo script, nao pelo LLM)",
+  "fonte": "string - de onde o codigo foi lido (caminho do checkout, repo/branch/commit se disponivel)",
+  "enumeracoes": [
+    {
+      "pacote": "string",
+      "classe": "string",
+      "constante": "string",
+      "codigo": "string",
+      "descricao": "string | null",
+      "arquivo": "string - caminho relativo ao source-dir"
+    }
+  ],
+  "regras_negocio": [
+    {
+      "id": "string - identificador curto e estavel, ex: RN001 (unico dentro do lote)",
+      "classe": "string",
+      "metodo": "string",
+      "descricao": "string - regra resumida em linguagem de negocio",
+      "mensagem_original": "string | null - trecho de codigo/expressao que evidencia a regra",
+      "arquivo": "string",
+      "linha": "number | null"
+    }
+  ],
+  "dtos_entrada": [
+    {
+      "operacao": "string - nome de negocio da operacao",
+      "classe": "string",
+      "campos": ["string - 'nomeCampo: Tipo'"],
+      "arquivo": "string"
+    }
+  ],
+  "dtos_saida": [
+    {
+      "operacao": "string",
+      "classe": "string",
+      "campos": ["string - 'nomeCampo: Tipo'"],
+      "arquivo": "string"
+    }
+  ],
+  "validadores": [
+    {
+      "classe": "string",
+      "campo_validado": "string",
+      "mensagem": "string",
+      "arquivo": "string",
+      "linha": "number | null"
+    }
+  ],
+  "tabelas_sql": [
+    {
+      "tabela": "string - nome da tabela em MAIUSCULO, igual ao TABLE_NAME do metadata_context",
+      "operacoes": ["string - classe/metodo que referencia a tabela"],
+      "arquivo": "string"
+    }
+  ],
+  "resumo": {
+    "classificados": {
+      "total_enumeracoes": "number",
+      "total_regras_negocio": "number",
+      "total_dtos_entrada": "number",
+      "total_dtos_saida": "number",
+      "total_validadores": "number",
+      "total_tabelas_sql": "number"
+    }
+  }
+}

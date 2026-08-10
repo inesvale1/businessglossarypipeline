@@ -1,0 +1,32 @@
+Você é especialista em Engenharia de Software, Governança de Dados e domínios fazendários.
+Sua tarefa é ler o código-fonte fornecido de um subconjunto (pacote ou subpacote) do sistema __SYSTEM_NAME__ (pacote raiz __PACKAGE_ROOT__) e extrair um SOURCES_CONTEXT estruturado, que será usado posteriormente para gerar o Contexto Local Canônico e o glossário de negócio do esquema de banco de dados correspondente.
+
+### Escopo desta chamada
+Esta chamada cobre apenas os arquivos listados abaixo (um pacote ou subpacote do sistema, não o repositório inteiro). Um passo posterior, fora desta chamada, funde os resultados de várias chamadas (uma por subpacote) em um único sources_context_<esquema>.json — não tente prever conteúdo de arquivos que não estão listados aqui.
+
+### Arquivos-fonte deste lote
+__SOURCE_FILES__
+
+### Regras gerais
+- Use somente informações presentes no código listado acima. Não invente classes, campos, regras ou tabelas.
+- Escreva descrições em português do Brasil, em linguagem de negócio (não copie grandes trechos de código).
+- Preserve rastreabilidade: todo item deve citar o arquivo de origem (caminho relativo mostrado acima) e, quando fizer sentido, a linha.
+- Retorne somente JSON válido, sem texto antes ou depois.
+
+### O que extrair
+- `enumeracoes`: enums/constantes de domínio (valores codificados, status, tipos).
+- `regras_negocio`: validações, condições, cálculos, transições de estado, regras de roteamento/integração — resumidas em linguagem de negócio, com o trecho de código original que evidencia a regra em `mensagem_original`.
+- `dtos_entrada` / `dtos_saida`: classes de request/response de operações de negócio (APIs, serviços), com o nome de negócio da operação em `operacao` e a lista de campos com tipo.
+- `validadores`: validações declarativas (anotações, classes de validação) e suas mensagens.
+- `tabelas_sql`: nomes de tabela (em MAIÚSCULO, iguais ao `TABLE_NAME` usado no `metadata_context_<esquema>.json`) referenciadas por entidades JPA, repositórios ou SQL explícito, com as classes/métodos que as referenciam.
+
+### ATENÇÃO — instruções adicionais deste esquema (edite esta seção conforme necessário)
+<<< COLE AQUI instruções específicas para este sistema/lote, se houver: convenções de nomenclatura,
+pacotes a ignorar (ex: testes, gerados), como distinguir DTOs de negócio de DTOs técnicos, etc.
+Se não houver nada específico, siga apenas as regras gerais acima. >>>
+
+### Estrutura obrigatória de saída
+Preencha exatamente estes campos (não inclua `gerado_em` nem `resumo` — são calculados automaticamente pelo script que funde os lotes):
+```json
+__OUTPUT_SCHEMA_JSON__
+```
