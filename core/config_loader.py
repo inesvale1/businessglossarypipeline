@@ -41,6 +41,11 @@ class SourceRepoConfig:
     subpackages: list[str] = field(default_factory=list)
     # See core/relevance_filter.py RelevanceFilterConfig.strict_include.
     strict_include: bool = False
+    # "source" (default): Java/SQL source code -> sources_context_<schema>.json.
+    # "docs": vision/requirements/use-case documents (.odt/.docx/.pdf) -> a
+    # separate business_docs_context_<schema>.json, since these don't match
+    # the per-table batching that sources_context feeds into (core/batcher.py).
+    content_type: str = "source"
 
 
 @dataclass(frozen=True)
@@ -51,7 +56,10 @@ class CatalogoConfig:
     batching: BatchingConfig
     llm: LLMConfig
     checkouts_root: Path
-    sources_repos: dict[str, SourceRepoConfig]
+    # One schema can be assembled from several git repos (e.g. a system split
+    # across multiple microservice repos) -- hence a list per schema, not a
+    # single SourceRepoConfig.
+    sources_repos: dict[str, list[SourceRepoConfig]]
 
 
 def load_config(path: str | Path) -> CatalogoConfig:
@@ -76,8 +84,8 @@ def load_config(path: str | Path) -> CatalogoConfig:
     if not checkouts_root.is_absolute():
         checkouts_root = project_root / checkouts_root
 
-    sources_repos = {
-        schema_name: SourceRepoConfig(
+    def parse_repo(repo_data: dict) -> SourceRepoConfig:
+        return SourceRepoConfig(
             git_url=str(repo_data["git_url"]),
             ref=str(repo_data.get("ref", "main")),
             username=repo_data.get("username"),
@@ -85,7 +93,13 @@ def load_config(path: str | Path) -> CatalogoConfig:
             token_keyring_username=repo_data.get("token_keyring_username"),
             subpackages=list(repo_data.get("subpackages", [])),
             strict_include=bool(repo_data.get("strict_include", False)),
+            content_type=str(repo_data.get("content_type", "source")),
         )
+
+    sources_repos = {
+        # A schema's entry is either one repo object or a list of repo
+        # objects (a system split across several git repos).
+        schema_name: [parse_repo(r) for r in repo_data] if isinstance(repo_data, list) else [parse_repo(repo_data)]
         for schema_name, repo_data in sources_repos_data.items()
     }
 

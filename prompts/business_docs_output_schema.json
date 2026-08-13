@@ -1,0 +1,27 @@
+{
+  "sistema": "string - nome curto do sistema (ex: receita)",
+  "gerado_em": "string - timestamp ISO 8601 (preenchido automaticamente pelo script, nao pelo LLM)",
+  "fonte": "string - de onde o documento foi lido (preenchido automaticamente pelo script, nao pelo LLM)",
+  "documentos_negocio": [
+    {
+      "arquivo": "string - caminho relativo do documento (preenchido automaticamente pelo script, nao pelo LLM)",
+      "tipo_documento": "string - um de: visao | requisitos | caso_de_uso | regras_negocio | outro",
+      "titulo": "string - titulo/nome do documento ou caso de uso, conforme aparece no texto",
+      "resumo": "string - resumo executivo em linguagem de negocio (3 a 8 frases). Se o texto vier corrompido/ilegivel (ruido de conversao de formato binario), diga isso aqui em vez de inventar conteudo",
+      "objetivos_negocio": ["string - objetivos/metas de negocio declarados no documento"],
+      "atores": ["string - papeis/atores envolvidos, se houver (ex: Contribuinte, Fiscal, Sistema Externo X)"],
+      "requisitos": [
+        {
+          "id": "string | null - identificador do requisito no documento, se houver (ex: RF001)",
+          "descricao": "string"
+        }
+      ],
+      "regras_negocio": [
+        {
+          "descricao": "string - regra resumida em linguagem de negocio",
+          "trecho_original": "string | null - trecho do texto que evidencia a regra"
+        }
+      ]
+    }
+  ]
+}

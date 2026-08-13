@@ -43,16 +43,16 @@ def ensure_local_checkout(settings: GitRepoSettings, checkout_dir: Path) -> Path
 
     if (checkout_dir / ".git").exists():
         _run_git(
-            ["-C", str(checkout_dir), "-c", f"http.extraHeader={auth_header}", "fetch", "--depth", "1", "origin", settings.ref],
+            ["-C", str(checkout_dir), "-c", "core.longpaths=true", "-c", f"http.extraHeader={auth_header}", "fetch", "--depth", "1", "origin", settings.ref],
             env=env,
             redact=token,
         )
-        _run_git(["-C", str(checkout_dir), "checkout", settings.ref], env=env, redact=token)
-        _run_git(["-C", str(checkout_dir), "reset", "--hard", f"origin/{settings.ref}"], env=env, redact=token)
+        _run_git(["-C", str(checkout_dir), "-c", "core.longpaths=true", "checkout", settings.ref], env=env, redact=token)
+        _run_git(["-C", str(checkout_dir), "-c", "core.longpaths=true", "reset", "--hard", f"origin/{settings.ref}"], env=env, redact=token)
     else:
         checkout_dir.parent.mkdir(parents=True, exist_ok=True)
         _run_git(
-            ["-c", f"http.extraHeader={auth_header}", "clone", "--depth", "1", "--branch", settings.ref, settings.git_url, str(checkout_dir)],
+            ["-c", "core.longpaths=true", "-c", f"http.extraHeader={auth_header}", "clone", "--depth", "1", "--branch", settings.ref, settings.git_url, str(checkout_dir)],
             env=env,
             redact=token,
         )
@@ -78,7 +78,7 @@ def sync_blobless_tree(settings: GitRepoSettings, tree_dir: Path) -> None:
 
     if (tree_dir / ".git").exists():
         _run_git(
-            ["-C", str(tree_dir), "-c", f"http.extraHeader={auth_header}", "fetch", "--filter=blob:none", "origin", settings.ref],
+            ["-C", str(tree_dir), "-c", "core.longpaths=true", "-c", f"http.extraHeader={auth_header}", "fetch", "--filter=blob:none", "origin", settings.ref],
             env=env,
             redact=token,
         )
@@ -86,7 +86,7 @@ def sync_blobless_tree(settings: GitRepoSettings, tree_dir: Path) -> None:
         tree_dir.parent.mkdir(parents=True, exist_ok=True)
         _run_git(
             [
-                "-c", f"http.extraHeader={auth_header}", "clone", "--filter=blob:none", "--no-checkout",
+                "-c", "core.longpaths=true", "-c", f"http.extraHeader={auth_header}", "clone", "--filter=blob:none", "--no-checkout",
                 "--single-branch", "--branch", settings.ref, settings.git_url, str(tree_dir),
             ],
             env=env,
@@ -94,22 +94,41 @@ def sync_blobless_tree(settings: GitRepoSettings, tree_dir: Path) -> None:
         )
 
 
-def list_tracked_files_with_size(tree_dir: Path, ref: str) -> list[tuple[str, int]]:
+def list_tracked_files_with_size(tree_dir: Path, ref: str, settings: GitRepoSettings) -> list[tuple[str, int]]:
     """Return every file path at `origin/<ref>` with its byte size, reading
     only tree/blob *metadata* -- no file content is fetched by this call.
     Call `sync_blobless_tree` first.
+
+    On a blobless clone, `-l` (sizes) can still require the promisor remote to
+    be contacted for objects git doesn't have locally yet, so this needs the
+    same auth header as the initial clone -- a plain `git ls-tree` without it
+    fails auth on that on-demand fetch even though the clone itself succeeded.
+
+    Uses `-z` (NUL-terminated entries) so paths come back raw. Without it, git
+    C-quotes any path with spaces or non-ASCII bytes (both common in this
+    codebase's Portuguese file/directory names) as octal escapes inside
+    double quotes, e.g. `"...Arrecada\303\247\303\243o.odt"` -- passing that
+    literal quoted string on to `git show origin/<ref>:<path>` (in `read_blob`)
+    then fails with "path does not exist" because it's no longer the real path.
     """
+    auth_header, token = _auth_header(settings)
+    env = _no_prompt_env()
     result = subprocess.run(
-        ["git", "-C", str(tree_dir), "ls-tree", "-r", "-l", f"origin/{ref}"],
-        capture_output=True, text=True,
+        ["git", "-C", str(tree_dir), "-c", "core.longpaths=true", "-c", f"http.extraHeader={auth_header}", "ls-tree", "-r", "-l", "-z", f"origin/{ref}"],
+        capture_output=True, env=env,
     )
     if result.returncode != 0:
-        raise GitSourceError(f"git ls-tree falhou:\n{result.stderr.strip()}")
+        stderr = result.stderr.decode("utf-8", errors="replace")
+        safe_stderr = stderr.replace(token, "***") if token else stderr
+        raise GitSourceError(f"git ls-tree falhou:\n{safe_stderr.strip()}")
 
     files: list[tuple[str, int]] = []
-    for line in result.stdout.splitlines():
+    stdout = result.stdout.decode("utf-8", errors="replace")
+    for entry in stdout.split("\0"):
+        if not entry:
+            continue
         # format: "<mode> <type> <hash> <size>\t<path>"
-        meta, _, path = line.partition("\t")
+        meta, _, path = entry.partition("\t")
         if not path:
             continue
         parts = meta.split()
@@ -123,20 +142,49 @@ def list_tracked_files_with_size(tree_dir: Path, ref: str) -> list[tuple[str, in
     return files
 
 
-def read_blob(tree_dir: Path, ref: str, relative_path: str) -> str:
+def read_blob(tree_dir: Path, ref: str, relative_path: str, settings: GitRepoSettings) -> str:
     """Fetch and return the text content of one file at `origin/<ref>`.
 
     On a blobless clone this triggers git's on-demand fetch of just this one
     blob from the server (transparent to the caller; git caches it locally
     afterwards) -- the whole point of only calling this for files that passed
-    the relevance filter.
+    the relevance filter. That on-demand fetch needs the same auth header as
+    the initial clone (see `list_tracked_files_with_size`). Also needs
+    `core.longpaths=true`: on Windows, git disambiguates a `<rev>:<path>`
+    argument from a literal filename by `stat()`-ing it relative to `tree_dir`
+    first, and that combined path can exceed the 260-char MAX_PATH for a
+    deeply nested Java package tree, failing with "Filename too long" even
+    though no file is actually being written.
     """
+    auth_header, token = _auth_header(settings)
+    env = _no_prompt_env()
     result = subprocess.run(
-        ["git", "-C", str(tree_dir), "show", f"origin/{ref}:{relative_path}"],
-        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        ["git", "-C", str(tree_dir), "-c", "core.longpaths=true", "-c", f"http.extraHeader={auth_header}", "show", f"origin/{ref}:{relative_path}"],
+        capture_output=True, text=True, encoding="utf-8", errors="replace", env=env,
     )
     if result.returncode != 0:
-        raise GitSourceError(f"git show origin/{ref}:{relative_path} falhou:\n{result.stderr.strip()}")
+        safe_stderr = result.stderr.replace(token, "***") if token else result.stderr
+        raise GitSourceError(f"git show origin/{ref}:{relative_path} falhou:\n{safe_stderr.strip()}")
+    return result.stdout
+
+
+def read_blob_bytes(tree_dir: Path, ref: str, relative_path: str, settings: GitRepoSettings) -> bytes:
+    """Like `read_blob`, but returns the raw bytes with no text decoding.
+
+    Needed for binary document formats (.odt/.docx are zip containers, .pdf
+    has its own binary structure) -- decoding them as UTF-8 text, as
+    `read_blob` does for source code, would corrupt the bytes.
+    """
+    auth_header, token = _auth_header(settings)
+    env = _no_prompt_env()
+    result = subprocess.run(
+        ["git", "-C", str(tree_dir), "-c", "core.longpaths=true", "-c", f"http.extraHeader={auth_header}", "show", f"origin/{ref}:{relative_path}"],
+        capture_output=True, env=env,
+    )
+    if result.returncode != 0:
+        stderr = result.stderr.decode("utf-8", errors="replace")
+        safe_stderr = stderr.replace(token, "***") if token else stderr
+        raise GitSourceError(f"git show origin/{ref}:{relative_path} falhou:\n{safe_stderr.strip()}")
     return result.stdout
 
 

@@ -18,6 +18,13 @@ DEFAULT_EXCLUDE_PATTERNS: tuple[str, ...] = (
 
 DEFAULT_ALLOWED_EXTENSIONS: tuple[str, ...] = (".java", ".sql")
 
+# For sources_repos.<schema> entries with content_type="docs" (business
+# vision/requirements/use-case documents, not source code) -- see
+# core/document_text.py for which of these actually get parsed (.doc, the
+# legacy binary Word format, is excluded on purpose: no reliable stdlib-only
+# text extraction for it).
+DOCUMENT_EXTENSIONS: tuple[str, ...] = (".odt", ".docx", ".pdf")
+
 # Opt-in (strict_include=True): a file must ALSO contain one of these
 # substrings in its path to be kept. Narrows a very large repo further, at
 # the real risk of missing business logic hiding in a class whose name

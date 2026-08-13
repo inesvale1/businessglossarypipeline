@@ -5,6 +5,27 @@
   "batching": {
     "max_batch_bytes": 40000
   },
+  "checkouts_root": ".checkouts",
+  "sources_repos": {
+    "receita2": [
+      { "git_url": "https://git.sefaz.ce.gov.br/receita/gnre.git", "ref": "master", "username": "49756615", "token_keyring_service": "businessglossary-git", "token_keyring_username": "49756615" },
+      { "git_url": "https://git.sefaz.ce.gov.br/receita/infodae-webservice.git", "ref": "development", "username": "49756615", "token_keyring_service": "businessglossary-git", "token_keyring_username": "49756615" },
+      { "git_url": "https://git.sefaz.ce.gov.br/receita/receita-business.git", "ref": "development", "username": "49756615", "token_keyring_service": "businessglossary-git", "token_keyring_username": "49756615" },
+      { "git_url": "https://git.sefaz.ce.gov.br/receita/receita-dae-ws.git", "ref": "master", "username": "49756615", "token_keyring_service": "businessglossary-git", "token_keyring_username": "49756615" },
+      { "git_url": "https://git.sefaz.ce.gov.br/receita/receita-ejb-client.git", "ref": "development", "username": "49756615", "token_keyring_service": "businessglossary-git", "token_keyring_username": "49756615" },
+      { "git_url": "https://git.sefaz.ce.gov.br/receita/receita-integration.git", "ref": "master", "username": "49756615", "token_keyring_service": "businessglossary-git", "token_keyring_username": "49756615" },
+      { "git_url": "https://git.sefaz.ce.gov.br/receita/receita-sp-dae-emitido.git", "ref": "master", "username": "49756615", "token_keyring_service": "businessglossary-git", "token_keyring_username": "49756615" },
+      {
+        "git_url": "https://git.sefaz.ce.gov.br/receita/receita-docs.git",
+        "ref": "master",
+        "username": "49756615",
+        "token_keyring_service": "businessglossary-git",
+        "token_keyring_username": "49756615",
+        "content_type": "docs",
+        "subpackages": ["1-Requisitos", "2-Analise_Projeto"]
+      }
+    ]
+  },
   "llm": {
     "enabled": true,
     "api_type": "azure",

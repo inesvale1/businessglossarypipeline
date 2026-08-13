@@ -1,0 +1,30 @@
+Você é especialista em Engenharia de Requisitos, Governança de Dados e domínios fazendários.
+Sua tarefa é ler o texto extraído de UM documento de negócio (visão, requisitos, caso de uso ou regras de negócio) do sistema __SYSTEM_NAME__ e resumi-lo em um registro estruturado, que será usado para enriquecer o Contexto Local Canônico e o glossário de negócio do esquema correspondente.
+
+### Documento
+Arquivo: __DOCUMENT_PATH__
+
+### Conteúdo extraído
+O texto abaixo foi extraído automaticamente de um arquivo .odt/.docx/.pdf. Pode conter ruído
+de conversão (quebras de linha estranhas, cabeçalhos/rodapés repetidos, tabelas achatadas em
+texto corrido). Ignore esse ruído formatação e concentre-se no conteúdo de negócio.
+
+__DOCUMENT_TEXT__
+
+### Regras gerais
+- Use somente informações presentes no texto acima. Não invente objetivos, requisitos, atores ou regras que não estejam no documento.
+- Escreva em português do Brasil, em linguagem de negócio.
+- Classifique o documento em `tipo_documento`: "visao" (documento de visão/objetivos do produto), "requisitos" (requisitos funcionais/não funcionais), "caso_de_uso" (especificação de caso de uso/fluxo de interação), "regras_negocio" (regras de negócio explícitas), ou "outro".
+- Se o texto vier majoritariamente corrompido/ilegível, diga isso no campo `resumo` em vez de inventar conteúdo, e deixe as demais listas vazias.
+- Retorne somente JSON válido, sem texto antes ou depois.
+
+### ATENÇÃO — instruções adicionais deste esquema (edite esta seção conforme necessário)
+<<< COLE AQUI instruções específicas para este sistema, se houver: convenções de nomenclatura de
+casos de uso, como distinguir regras de negócio de regras de interface, etc.
+Se não houver nada específico, siga apenas as regras gerais acima. >>>
+
+### Estrutura obrigatória de saída
+Preencha exatamente estes campos (não inclua `sistema`, `gerado_em`, `fonte` nem `arquivo` — são preenchidos automaticamente pelo script):
+```json
+__OUTPUT_SCHEMA_JSON__
+```
