@@ -27,6 +27,13 @@ class BatchingConfig:
 
 
 @dataclass(frozen=True)
+class RelevanceFilterSettings:
+    # See core/relevance_filter.py for the defaults/rationale these mirror.
+    max_file_age_days: int | None = 365
+    exclude_dirname_substrings: tuple[str, ...] = ("test",)
+
+
+@dataclass(frozen=True)
 class SourceRepoConfig:
     git_url: str
     ref: str = "main"
@@ -55,11 +62,23 @@ class CatalogoConfig:
     schemas: list[str]
     batching: BatchingConfig
     llm: LLMConfig
+    relevance_filter: RelevanceFilterSettings
     checkouts_root: Path
     # One schema can be assembled from several git repos (e.g. a system split
     # across multiple microservice repos) -- hence a list per schema, not a
     # single SourceRepoConfig.
     sources_repos: dict[str, list[SourceRepoConfig]]
+
+
+def _parse_relevance_filter(data: dict) -> RelevanceFilterSettings:
+    # "max_file_age_days": null in the JSON explicitly disables the age
+    # filter; the key being absent falls back to the 365-day default.
+    raw_age = data.get("max_file_age_days", 365)
+    max_age = None if raw_age is None else int(raw_age)
+    return RelevanceFilterSettings(
+        max_file_age_days=max_age,
+        exclude_dirname_substrings=tuple(data.get("exclude_dirname_substrings", ["test"])),
+    )
 
 
 def load_config(path: str | Path) -> CatalogoConfig:
@@ -77,6 +96,7 @@ def load_config(path: str | Path) -> CatalogoConfig:
 
     llm_data = data.get("llm", {})
     batching_data = data.get("batching", {})
+    relevance_filter_data = data.get("relevance_filter", {}) or {}
     sources_repos_data = data.get("sources_repos", {}) or {}
 
     checkouts_root_raw = str(data.get("checkouts_root", ".checkouts"))
@@ -124,6 +144,7 @@ def load_config(path: str | Path) -> CatalogoConfig:
             temperature=float(llm_data.get("temperature", 0.1)),
             max_output_tokens=int(llm_data.get("max_output_tokens", 8000)),
         ),
+        relevance_filter=_parse_relevance_filter(relevance_filter_data),
         checkouts_root=checkouts_root,
         sources_repos=sources_repos,
     )

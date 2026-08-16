@@ -18,6 +18,7 @@ from .consolidator import (
 )
 from .inputs_loader import SchemaInputs, load_organizational_context, load_schema_inputs
 from .llm_client import LLMClient
+from .output_writer import write_timestamped_copy
 from .prompt_builder import build_batch_prompt, build_merge_decision_prompt
 
 _ID_LIST_KEYS = (
@@ -104,7 +105,9 @@ def run_schema(
 
     output_path = config.schema_root / schema_name / "outputs" / f"local_canonical_context_{schema_name}.json"
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(final_document, ensure_ascii=False, indent=2), encoding="utf-8")
+    content = json.dumps(final_document, ensure_ascii=False, indent=2)
+    output_path.write_text(content, encoding="utf-8")
+    write_timestamped_copy(output_path, content)
 
     return SchemaResult(schema_name, "ok", f"{len(batches)} lote(s)", output_path)
 

@@ -29,8 +29,17 @@ from core.business_docs_builder import build_prompt as build_docs_prompt
 from core.business_docs_builder import merge_business_docs
 from core.config_loader import CatalogoConfig, SourceRepoConfig, load_config
 from core.document_text import DocumentTextError, extract_text
-from core.git_source import GitRepoSettings, GitSourceError, list_tracked_files_with_size, read_blob, read_blob_bytes, sync_blobless_tree
+from core.git_source import (
+    GitRepoSettings,
+    GitSourceError,
+    list_recently_touched_paths,
+    list_tracked_files_with_size,
+    read_blob,
+    read_blob_bytes,
+    sync_blobless_tree,
+)
 from core.llm_client import LLMClient
+from core.output_writer import write_timestamped_copy
 from core.relevance_filter import DOCUMENT_EXTENSIONS, RelevanceFilterConfig, filter_relevant_paths, group_into_batches
 from core.sources_context_builder import SourceFile, build_prompt, collect_source_files, merge_sources_context
 
@@ -67,13 +76,19 @@ def _run_one_batch(
 
 def _sync_and_list(
     config: CatalogoConfig, schema: str, repo: SourceRepoConfig, settings: GitRepoSettings,
-) -> tuple[Path, list[tuple[str, int]]] | None:
+) -> tuple[Path, list[tuple[str, int]], dict[str, str] | None] | None:
     repo_slug = repo.git_url.rstrip("/").rsplit("/", 1)[-1].removesuffix(".git")
     tree_dir = config.checkouts_root / f"{schema}-{repo_slug}-tree"
     print(f"Listando arquivos de {repo.git_url}@{repo.ref} (sem baixar conteudo)...")
+    max_age_days = config.relevance_filter.max_file_age_days
     try:
         sync_blobless_tree(settings, tree_dir)
         all_files = list_tracked_files_with_size(tree_dir, repo.ref, settings)
+        recently_touched = (
+            list_recently_touched_paths(tree_dir, repo.ref, settings, since_days=max_age_days)
+            if max_age_days is not None
+            else None
+        )
     except GitSourceError as exc:
         print(f"[erro] {exc}")
         return None
@@ -81,7 +96,18 @@ def _sync_and_list(
     if repo.subpackages:
         prefixes = tuple(p.rstrip("/") + "/" for p in repo.subpackages)
         all_files = [(p, s) for p, s in all_files if p.startswith(prefixes)]
-    return tree_dir, all_files
+    return tree_dir, all_files, recently_touched
+
+
+def _relevance_filter_config(config: CatalogoConfig, repo: SourceRepoConfig, allowed_extensions=None) -> RelevanceFilterConfig:
+    kwargs = dict(
+        strict_include=repo.strict_include,
+        exclude_dirname_substrings=config.relevance_filter.exclude_dirname_substrings,
+        max_file_age_days=config.relevance_filter.max_file_age_days,
+    )
+    if allowed_extensions is not None:
+        kwargs["allowed_extensions"] = allowed_extensions
+    return RelevanceFilterConfig(**kwargs)
 
 
 def _print_filter_summary(all_files: list, filter_result) -> None:
@@ -114,9 +140,9 @@ def _run_source_repos(
         synced = _sync_and_list(config, schema, repo, settings)
         if synced is None:
             continue
-        tree_dir, all_files = synced
+        tree_dir, all_files, recently_touched = synced
 
-        filter_result = filter_relevant_paths(all_files, RelevanceFilterConfig(strict_include=repo.strict_include))
+        filter_result = filter_relevant_paths(all_files, _relevance_filter_config(config, repo), recently_touched)
         _print_filter_summary(all_files, filter_result)
         if dry_run:
             _print_dry_run_listing(filter_result)
@@ -158,10 +184,12 @@ def _run_docs_repos(
         synced = _sync_and_list(config, schema, repo, settings)
         if synced is None:
             continue
-        tree_dir, all_files = synced
+        tree_dir, all_files, recently_touched = synced
 
         filter_result = filter_relevant_paths(
-            all_files, RelevanceFilterConfig(allowed_extensions=DOCUMENT_EXTENSIONS, strict_include=repo.strict_include)
+            all_files,
+            _relevance_filter_config(config, repo, allowed_extensions=DOCUMENT_EXTENSIONS),
+            recently_touched,
         )
         _print_filter_summary(all_files, filter_result)
         if dry_run:
@@ -328,14 +356,18 @@ def main() -> None:
 
     if merged is not None:
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_text(json.dumps(merged, ensure_ascii=False, indent=2), encoding="utf-8")
+        content = json.dumps(merged, ensure_ascii=False, indent=2)
+        output_path.write_text(content, encoding="utf-8")
+        write_timestamped_copy(output_path, content)
         action = "Fundido em" if existing is not None else "Gravado"
         print(f"{action}: {output_path}")
         print("Resumo:", merged.get("resumo"))
 
     if merged_docs is not None:
         docs_output_path.parent.mkdir(parents=True, exist_ok=True)
-        docs_output_path.write_text(json.dumps(merged_docs, ensure_ascii=False, indent=2), encoding="utf-8")
+        content_docs = json.dumps(merged_docs, ensure_ascii=False, indent=2)
+        docs_output_path.write_text(content_docs, encoding="utf-8")
+        write_timestamped_copy(docs_output_path, content_docs)
         action = "Fundido em" if existing_docs is not None else "Gravado"
         print(f"{action}: {docs_output_path}")
         print("Resumo:", merged_docs.get("resumo"))

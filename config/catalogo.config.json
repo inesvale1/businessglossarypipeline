@@ -6,6 +6,10 @@
     "max_batch_bytes": 40000
   },
   "checkouts_root": ".checkouts",
+  "relevance_filter": {
+    "max_file_age_days": 365,
+    "exclude_dirname_substrings": ["test"]
+  },
   "sources_repos": {
     "receita2": [
       { "git_url": "https://git.sefaz.ce.gov.br/receita/gnre.git", "ref": "master", "username": "49756615", "token_keyring_service": "businessglossary-git", "token_keyring_username": "49756615" },
@@ -23,6 +27,32 @@
         "token_keyring_username": "49756615",
         "content_type": "docs",
         "subpackages": ["1-Requisitos", "2-Analise_Projeto"]
+      }
+    ],
+    "cadastro": [
+      { "git_url": "https://git.sefaz.ce.gov.br/cadastro/cadastro-business.git", "ref": "main", "username": "49756615", "token_keyring_service": "businessglossary-git", "token_keyring_username": "49756615" },
+      { "git_url": "https://git.sefaz.ce.gov.br/cadastro/cadastro-web.git", "ref": "main", "username": "49756615", "token_keyring_service": "businessglossary-git", "token_keyring_username": "49756615" },
+      {
+        "git_url": "https://git.sefaz.ce.gov.br/cadastro/doc-cnpj-alfa.git",
+        "ref": "master",
+        "username": "49756615",
+        "token_keyring_service": "businessglossary-git",
+        "token_keyring_username": "49756615",
+        "content_type": "docs"
+      }
+    ],
+    "sitram2": [
+      { "git_url": "https://git.sefaz.ce.gov.br/sitram/sitram-parent.git", "ref": "develop", "username": "49756615", "token_keyring_service": "businessglossary-git", "token_keyring_username": "49756615" },
+      { "git_url": "https://git.sefaz.ce.gov.br/sitram/sitram3/service-pagamento.git", "ref": "develop", "username": "49756615", "token_keyring_service": "businessglossary-git", "token_keyring_username": "49756615" },
+      { "git_url": "https://git.sefaz.ce.gov.br/sitram/sitram3/sitram-internet.git", "ref": "develop", "username": "49756615", "token_keyring_service": "businessglossary-git", "token_keyring_username": "49756615" },
+      { "git_url": "https://git.sefaz.ce.gov.br/sitram/sitram3/service-integracao.git", "ref": "develop", "username": "49756615", "token_keyring_service": "businessglossary-git", "token_keyring_username": "49756615" },
+      {
+        "git_url": "https://git.sefaz.ce.gov.br/sitram/docs.git",
+        "ref": "master",
+        "username": "49756615",
+        "token_keyring_service": "businessglossary-git",
+        "token_keyring_username": "49756615",
+        "content_type": "docs"
       }
     ]
   },

@@ -9,7 +9,12 @@ from xml.etree import ElementTree as ET
 # .odt/.docx (both zip+XML containers) and .pdf (via pypdf). Files with this
 # extension are reported as skipped by the caller instead of silently
 # producing garbled text.
-SUPPORTED_EXTENSIONS = (".odt", ".docx", ".pdf")
+#
+# .md/.mdx cover docs-as-code repos (e.g. Astro/Starlight, Docusaurus, plain
+# GitHub-flavored markdown) where business/requirements documentation lives
+# as source-controlled Markdown instead of .odt/.docx/.pdf -- already plain
+# text, so no parsing library is needed.
+SUPPORTED_EXTENSIONS = (".odt", ".docx", ".pdf", ".md", ".mdx")
 
 
 class DocumentTextError(RuntimeError):
@@ -29,6 +34,8 @@ def extract_text(relative_path: str, content: bytes) -> str:
             return _extract_docx(content)
         if ext == "pdf":
             return _extract_pdf(content)
+        if ext in ("md", "mdx"):
+            return _extract_markdown(content)
     except Exception as exc:
         raise DocumentTextError(f"Falha ao extrair texto de {relative_path!r}: {exc}") from exc
     raise DocumentTextError(f"Formato nao suportado: {relative_path!r}")
@@ -61,6 +68,10 @@ def _extract_docx(content: bytes) -> str:
             if any(cells):
                 parts.append(" | ".join(cells))
     return "\n".join(parts)
+
+
+def _extract_markdown(content: bytes) -> str:
+    return content.decode("utf-8", errors="replace")
 
 
 def _extract_pdf(content: bytes) -> str:

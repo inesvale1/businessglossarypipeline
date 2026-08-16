@@ -142,6 +142,73 @@ def list_tracked_files_with_size(tree_dir: Path, ref: str, settings: GitRepoSett
     return files
 
 
+def list_recently_touched_paths(
+    tree_dir: Path, ref: str, settings: GitRepoSettings, since_days: int,
+) -> dict[str, str]:
+    """Return every path touched by a commit in the last `since_days` days at
+    `origin/<ref>`, mapped to the ISO-8601 date of the most recent such
+    commit -- read entirely from commit/tree metadata already present after
+    `sync_blobless_tree` (a blobless clone only omits *blob* content, not
+    commits or trees), so this makes no additional network call and fetches
+    no file content.
+
+    Bounded with `git log --since=...` rather than walking full history: for
+    a repo with years of commits, most of that history is irrelevant to an
+    "is this file stale" question, and `--since` lets git stop traversing
+    once it passes the date boundary instead of diffing every commit ever
+    made (`git log --name-only` over full history is CPU-bound tree-diffing,
+    not network, and was observed taking many minutes on this project's
+    larger repos before this bound was added).
+
+    A path *absent* from the returned dict was not touched in the window --
+    core/relevance_filter.py treats that as stale and drops it. This is a
+    deliberate behavior change from "look up this path's last-touched date":
+    a path git.sefaz.ce.gov.br doesn't report in `--since` days is exactly
+    the set of files the age filter exists to drop, so there is no case
+    where knowing the *exact* older date would change the outcome.
+
+    Used by core/relevance_filter.py to drop stale files (last touched more
+    than `max_file_age_days` ago) before any blob is downloaded or sent to
+    the LLM.
+
+    Uses a control-character marker (`\\x01`) at the start of each commit's
+    line instead of `-z`: `-z` NUL-terminates the whole `git log` stream
+    (including multi-line commit bodies), which would make it ambiguous
+    where one commit's file list ends and the next commit's marker begins.
+    `\\x01` cannot appear in a commit date and is not a real filename
+    character, so it's a safe one-line-per-commit marker while `--name-only`
+    still emits one plain path per line beneath it.
+    """
+    auth_header, token = _auth_header(settings)
+    env = _no_prompt_env()
+    result = subprocess.run(
+        [
+            "git", "-C", str(tree_dir), "-c", "core.longpaths=true", "-c", f"http.extraHeader={auth_header}",
+            "log", f"--since={int(since_days)}.days", "--name-only", "--no-renames", "--format=\x01%cI", f"origin/{ref}",
+        ],
+        capture_output=True, env=env,
+    )
+    if result.returncode != 0:
+        stderr = result.stderr.decode("utf-8", errors="replace")
+        safe_stderr = stderr.replace(token, "***") if token else stderr
+        raise GitSourceError(f"git log falhou:\n{safe_stderr.strip()}")
+
+    touched: dict[str, str] = {}
+    current_date: str | None = None
+    stdout = result.stdout.decode("utf-8", errors="replace")
+    for line in stdout.split("\n"):
+        if line.startswith("\x01"):
+            current_date = line[1:].strip()
+            continue
+        path = line.strip()
+        if not path or current_date is None:
+            continue
+        # First time we see a path (log is newest-first), that's its most
+        # recent modification within the window -- skip later (older) hits.
+        touched.setdefault(path, current_date)
+    return touched
+
+
 def read_blob(tree_dir: Path, ref: str, relative_path: str, settings: GitRepoSettings) -> str:
     """Fetch and return the text content of one file at `origin/<ref>`.
 

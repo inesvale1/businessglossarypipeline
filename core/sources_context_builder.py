@@ -57,6 +57,14 @@ def collect_source_files(
     return files
 
 
+_FENCE_LANGUAGE_BY_EXTENSION = {".java": "java", ".sql": "sql", ".ts": "typescript"}
+
+
+def _fence_language(relative_path: str) -> str:
+    suffix = Path(relative_path).suffix.lower()
+    return _FENCE_LANGUAGE_BY_EXTENSION.get(suffix, "")
+
+
 def build_prompt(
     template: str,
     system_name: str,
@@ -68,7 +76,8 @@ def build_prompt(
     (system_prompt, user_prompt), the shape core/llm_client.py expects.
     """
     listing = "\n\n".join(
-        f"### Arquivo: {f.relative_path}\n```java\n{f.content}\n```" for f in source_files
+        f"### Arquivo: {f.relative_path}\n```{_fence_language(f.relative_path)}\n{f.content}\n```"
+        for f in source_files
     )
     user_prompt = (
         template
